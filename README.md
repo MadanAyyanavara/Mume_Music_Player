@@ -296,9 +296,6 @@ Contributions are welcome! Please follow these steps:
 
 ---
 
-## License
-
-MIT License - see LICENSE file for details
 
 ---
 
