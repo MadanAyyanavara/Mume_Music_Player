@@ -82,25 +82,26 @@ Music streaming app built with React Native (Expo) + TypeScript using the JioSaa
 ## Project Structure
 
 ```
-.
-├── src/
-│   ├── components/           # Reusable UI components
-│   ├── screens/              # Screen-level components
-│   ├── navigation/           # Navigation stack & types
-│   ├── services/
-│   │   ├── api/              # JioSaavn API client
-│   │   └── audio/            # Audio playback service
-│   ├── store/                # Zustand state slices
-│   ├── hooks/                # Custom hooks
-│   ├── utils/                # Helper functions
-│   ├── types/                # TypeScript interfaces
-│   └── theme/                # Design tokens
-├── assets/                   # Static assets
-├── app.json                  # Expo configuration
-├── eas.json                  # EAS build config
-└── package.json
 ```
-
+mume/
+├── src/
+│   ├── components/           # Reusable UI components (MiniPlayer, SongListItem, Modals)
+│   ├── screens/              # Screen-level components (Home, Player, Search, etc.)
+│   ├── navigation/           # Navigation stacks, Tab bar, and Route types
+│   ├── services/
+│   │   └── api/              # API Client (JioSaavn integration)
+│   ├── store/                # Zustand global state (Audio engine & User preferences)
+│   ├── hooks/                # Custom React hooks (useTheme, useAudio)
+│   ├── types/                # TypeScript interfaces & API response shapes
+│   ├── constants/            # Mock data and system-wide constants
+│   └── styles/               # Design tokens and theme definitions (Design System)
+├── assets/                   # Static assets (Icon, Splash, Sanitized Image assets)
+├── App.tsx                   # Main entry point and Provider configuration
+├── app.json                  # Expo ecosystem & Native permissions config
+├── eas.json                  # EAS Cloud Build profiles (APK & Play Store)
+├── tsconfig.json             # TypeScript compiler settings
+└── package.json              # Project dependencies & scripts
+```
 ---
 
 ## Architecture
