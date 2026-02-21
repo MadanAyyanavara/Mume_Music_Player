@@ -81,7 +81,7 @@ Music streaming app built with React Native (Expo) + TypeScript using the JioSaa
 
 ## Project Structure
 
-```
+
 ```
 mume/
 ├── src/
@@ -102,7 +102,7 @@ mume/
 ├── tsconfig.json             # TypeScript compiler settings
 └── package.json              # Project dependencies & scripts
 ```
----
+
 
 ## Architecture
 
