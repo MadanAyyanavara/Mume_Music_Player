@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { Audio, AVPlaybackStatus, InterruptionModeIOS, InterruptionModeAndroid } from 'expo-av';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as FileSystem from 'expo-file-system/legacy';
 
 export type Track = {
   id: string;
@@ -8,6 +9,7 @@ export type Track = {
   artist: string;
   imageUrl: string;
   audioUrl: string;
+  localAudioUrl?: string;
   duration: number; // in seconds
   lyrics?: string;
 };
@@ -20,6 +22,7 @@ type PlayerState = {
   position: number;
   duration: number;
   favorites: Track[];
+  downloadedTracks: Track[];
 
   // actions
   playTrack: (track: Track, queue?: Track[]) => Promise<void>;
@@ -27,10 +30,17 @@ type PlayerState = {
   resume: () => Promise<void>;
   seekTo: (seconds: number) => Promise<void>;
   setQueue: (queue: Track[]) => void;
-  next: () => Promise<void>;
+  next: (isAutoEnded?: boolean) => Promise<void>;
   previous: () => Promise<void>;
+  shuffleMode: boolean;
+  repeatMode: 'none' | 'all' | 'one';
+  toggleShuffle: () => void;
+  toggleRepeat: () => void;
   toggleFavorite: (track: Track) => void;
   isFavorite: (id: string) => boolean;
+  downloadTrack: (track: Track) => Promise<void>;
+  removeDownload: (id: string) => Promise<void>;
+  isDownloaded: (id: string) => boolean;
   theme: 'light' | 'dark';
   toggleTheme: () => void;
   loadTheme: () => Promise<void>;
@@ -57,7 +67,10 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   isPlaying: false,
   position: 0,
   duration: 0,
+  shuffleMode: false,
+  repeatMode: 'none',
   favorites: [],
+  downloadedTracks: [],
   theme: 'light',
   homeActiveTab: 'Suggested',
   isLoading: false,
@@ -111,9 +124,10 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       }
 
       // 4. Load new sound
+      const actualUri = track.localAudioUrl || track.audioUrl;
       const { sound } = await Audio.Sound.createAsync(
-        { uri: track.audioUrl },
-        { shouldPlay: false },
+        { uri: actualUri },
+        { shouldPlay: false, positionMillis: 0 },
         (status: AVPlaybackStatus) => {
           if (status.isLoaded) {
             // CRITICAL: Precise request ID matching is enough to prevent hallucinations.
@@ -121,6 +135,9 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
             // as soon as the sound is ready, without waiting for the entire playTrack 
             // process to conclude.
             if (currentRequestId === trackLoadRequestCounter) {
+              // Suppress Expo AV dirty state leaks during the loading phase
+              if (get().isLoading) return;
+
               set({
                 position: Math.floor(status.positionMillis / 1000),
                 duration: Math.floor((status.durationMillis || 0) / 1000),
@@ -128,7 +145,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
               });
 
               if (status.didJustFinish) {
-                get().next();
+                get().next(true);
               }
             }
           }
@@ -143,6 +160,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
 
       // 6. Success: this is still the intended song.
       soundInstance = sound;
+      await sound.setPositionAsync(0);
       await sound.playAsync();
 
     } catch (error) {
@@ -186,21 +204,55 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     set({ queue });
   },
 
-  next: async () => {
-    const { queue, currentIndex } = get();
-    const nextIndex = (currentIndex + 1) % queue.length;
-    if (queue.length > 0) {
-      await get().playTrack(queue[nextIndex], queue);
+  next: async (isAutoEnded: boolean = false) => {
+    const { queue, currentIndex, shuffleMode, repeatMode } = get();
+    if (queue.length === 0) return;
+
+    if (isAutoEnded && repeatMode === 'one') {
+      await get().playTrack(queue[currentIndex], queue);
+      return;
     }
+
+    let nextIndex;
+    if (shuffleMode && queue.length > 1) {
+      do {
+        nextIndex = Math.floor(Math.random() * queue.length);
+      } while (nextIndex === currentIndex);
+    } else {
+      nextIndex = (currentIndex + 1) % queue.length;
+    }
+
+    if (isAutoEnded && repeatMode === 'none' && !shuffleMode && nextIndex === 0) {
+      // End of queue and no repeat
+      return;
+    }
+
+    await get().playTrack(queue[nextIndex], queue);
   },
 
   previous: async () => {
-    const { queue, currentIndex } = get();
-    const prevIndex = (currentIndex - 1 + queue.length) % queue.length;
-    if (queue.length > 0) {
-      await get().playTrack(queue[prevIndex], queue);
+    const { queue, currentIndex, shuffleMode } = get();
+    if (queue.length === 0) return;
+
+    let prevIndex;
+    if (shuffleMode && queue.length > 1) {
+      do {
+        prevIndex = Math.floor(Math.random() * queue.length);
+      } while (prevIndex === currentIndex);
+    } else {
+      prevIndex = (currentIndex - 1 + queue.length) % queue.length;
     }
+
+    await get().playTrack(queue[prevIndex], queue);
   },
+
+  toggleShuffle: () => set((state) => ({ shuffleMode: !state.shuffleMode })),
+
+  toggleRepeat: () => set((state) => {
+    const modes: Array<'none' | 'all' | 'one'> = ['none', 'all', 'one'];
+    const nextIndex = (modes.indexOf(state.repeatMode) + 1) % modes.length;
+    return { repeatMode: modes[nextIndex] };
+  }),
 
   toggleFavorite: (track: Track) => {
     const { favorites } = get();
@@ -215,6 +267,44 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   isFavorite: (id: string) => {
     const { favorites } = get();
     return !!favorites.find((t: Track) => t.id === id);
+  },
+
+  downloadTrack: async (track: Track) => {
+    try {
+      if (get().isDownloaded(track.id)) return;
+      const dirInfo = await FileSystem.getInfoAsync(FileSystem.documentDirectory + 'downloads/');
+      if (!dirInfo.exists) {
+        await FileSystem.makeDirectoryAsync(FileSystem.documentDirectory + 'downloads/', { intermediates: true });
+      }
+
+      const fileUri = FileSystem.documentDirectory + `downloads/${track.id}.mp3`;
+      const downloadRes = await FileSystem.downloadAsync(track.audioUrl, fileUri);
+
+      if (downloadRes.status === 200) {
+        const localTrack = { ...track, localAudioUrl: downloadRes.uri };
+        set({ downloadedTracks: [...get().downloadedTracks, localTrack] });
+        get().persistState();
+      }
+    } catch (error) {
+      console.error("Failed to download track", error);
+    }
+  },
+
+  removeDownload: async (id: string) => {
+    try {
+      const track = get().downloadedTracks.find(t => t.id === id);
+      if (track && track.localAudioUrl) {
+        await FileSystem.deleteAsync(track.localAudioUrl, { idempotent: true });
+      }
+      set({ downloadedTracks: get().downloadedTracks.filter(t => t.id !== id) });
+      get().persistState();
+    } catch (error) {
+      console.error("Failed to remove download", error);
+    }
+  },
+
+  isDownloaded: (id: string) => {
+    return !!get().downloadedTracks.find((t: Track) => t.id === id);
   },
 
   toggleTheme: () => {
@@ -256,10 +346,11 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
 
   persistState: async () => {
     try {
-      const { favorites, queue } = get();
+      const { favorites, queue, downloadedTracks } = get();
       await Promise.all([
         AsyncStorage.setItem('favorites', JSON.stringify(favorites)),
-        AsyncStorage.setItem('queue', JSON.stringify(queue))
+        AsyncStorage.setItem('queue', JSON.stringify(queue)),
+        AsyncStorage.setItem('downloads', JSON.stringify(downloadedTracks))
       ]);
     } catch (e) {
       console.error('Error persisting state:', e);
@@ -268,16 +359,18 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
 
   loadPersistedState: async () => {
     try {
-      const [favs, q, theme] = await Promise.all([
+      const [favs, q, theme, dls] = await Promise.all([
         AsyncStorage.getItem('favorites'),
         AsyncStorage.getItem('queue'),
-        AsyncStorage.getItem('theme')
+        AsyncStorage.getItem('theme'),
+        AsyncStorage.getItem('downloads')
       ]);
 
       set({
         favorites: favs ? JSON.parse(favs) : [],
         queue: q ? JSON.parse(q) : [],
-        theme: (theme as 'light' | 'dark') || 'light'
+        theme: (theme as 'light' | 'dark') || 'light',
+        downloadedTracks: dls ? JSON.parse(dls) : []
       });
     } catch (e) {
       console.error('Error loading state:', e);

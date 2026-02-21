@@ -11,32 +11,57 @@ import { OptionsModal } from "../components/modals/OptionsModal";
 
 export const FavoritesScreen = () => {
   const navigation = useNavigation<any>();
-  const { favorites } = usePlayerStore();
+  const { favorites, downloadedTracks } = usePlayerStore();
   const { colors, isDark } = useTheme();
   const [selectedSong, setSelectedSong] = useState(null);
   const [optionsModalVisible, setOptionsModalVisible] = useState(false);
+  const [activeTab, setActiveTab] = useState<"Favorites" | "Downloads">("Favorites");
 
   const handleOpenOptions = (song: any) => {
     setSelectedSong(song);
     setOptionsModalVisible(true);
   };
 
+  const displayList = activeTab === "Favorites" ? favorites : downloadedTracks;
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>Favorites</Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Library</Text>
         <TouchableOpacity onPress={() => navigation.navigate("Search")}>
           <Ionicons name="search" size={24} color={colors.text} />
         </TouchableOpacity>
       </View>
 
-      {favorites.length > 0 ? (
+      <View style={styles.tabContainer}>
+        <TouchableOpacity
+          style={activeTab === "Favorites" ? styles.activeTab : styles.tab}
+          onPress={() => setActiveTab("Favorites")}
+        >
+          <Text style={[activeTab === "Favorites" ? styles.activeTabText : styles.tabText, { color: activeTab === "Favorites" ? colors.primary : colors.gray }]}>
+            Favorites
+          </Text>
+          {activeTab === "Favorites" && <View style={[styles.tabIndicator, { backgroundColor: colors.primary }]} />}
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={activeTab === "Downloads" ? styles.activeTab : styles.tab}
+          onPress={() => setActiveTab("Downloads")}
+        >
+          <Text style={[activeTab === "Downloads" ? styles.activeTabText : styles.tabText, { color: activeTab === "Downloads" ? colors.primary : colors.gray }]}>
+            Downloads
+          </Text>
+          {activeTab === "Downloads" && <View style={[styles.tabIndicator, { backgroundColor: colors.primary }]} />}
+        </TouchableOpacity>
+      </View>
+
+      {displayList.length > 0 ? (
         <View style={styles.content}>
           <View style={styles.statsRow}>
-            <Text style={[styles.statsText, { color: colors.gray }]}>{favorites.length} favorite songs</Text>
+            <Text style={[styles.statsText, { color: colors.gray }]}>{displayList.length} {activeTab === "Favorites" ? "favorite songs" : "downloaded songs"}</Text>
             <TouchableOpacity style={[styles.playAllBtn, { backgroundColor: colors.primary }]} onPress={() => {
-              if (favorites.length > 0) {
-                usePlayerStore.getState().playTrack(favorites[0], favorites);
+              if (displayList.length > 0) {
+                usePlayerStore.getState().playTrack(displayList[0], displayList);
                 navigation.navigate("Player");
               }
             }}>
@@ -46,12 +71,12 @@ export const FavoritesScreen = () => {
           </View>
 
           <FlatList
-            data={favorites}
+            data={displayList}
             renderItem={({ item, index }) => (
               <SongListItem
                 item={item}
                 index={index}
-                playlist={favorites}
+                playlist={displayList}
                 onOpenOptions={handleOpenOptions}
               />
             )}
@@ -63,10 +88,15 @@ export const FavoritesScreen = () => {
       ) : (
         <View style={styles.emptyContainer}>
           <View style={[styles.emptyIconBg, { backgroundColor: colors.lightGray }]}>
-            <Ionicons name="heart-outline" size={60} color={colors.primary} />
+            <Ionicons name={activeTab === "Favorites" ? "heart-outline" : "download-outline"} size={60} color={colors.primary} />
           </View>
           <Text style={[styles.emptyTitle, { color: colors.text }]}>Nothing here yet</Text>
-          <Text style={[styles.emptySubtitle, { color: colors.gray }]}>Start adding your favorite songs and they'll show up here!</Text>
+          <Text style={[styles.emptySubtitle, { color: colors.gray }]}>
+            {activeTab === "Favorites"
+              ? "Start adding your favorite songs and they'll show up here!"
+              : "Download songs from their options menu to listen offline."
+            }
+          </Text>
           <TouchableOpacity
             style={[styles.exploreBtn, { backgroundColor: colors.primary }]}
             onPress={() => navigation.navigate("Home")}
@@ -101,6 +131,38 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 28,
     fontWeight: "700",
+  },
+  tabContainer: {
+    flexDirection: "row",
+    paddingHorizontal: 24,
+    marginBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(150, 150, 150, 0.1)'
+  },
+  tab: {
+    marginRight: 24,
+    paddingBottom: 12,
+  },
+  activeTab: {
+    marginRight: 24,
+    paddingBottom: 12,
+  },
+  tabText: {
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  activeTabText: {
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  tabIndicator: {
+    position: "absolute",
+    bottom: -1,
+    left: 0,
+    right: 0,
+    height: 3,
+    borderTopLeftRadius: 3,
+    borderTopRightRadius: 3,
   },
   content: {
     flex: 1,

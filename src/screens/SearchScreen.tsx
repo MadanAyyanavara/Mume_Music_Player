@@ -25,7 +25,7 @@ import {
   fetchSongDetails
 } from "../services/api";
 
-const SEARCH_TABS = ["All", "Songs", "Albums", "Artists", "Playlists"];
+const SEARCH_TABS = ["Songs", "Artists", "Albums", "Folders"];
 const PAGE_LIMIT = 20;
 
 export const SearchScreen = () => {
@@ -34,7 +34,7 @@ export const SearchScreen = () => {
   const { colors, isDark } = useTheme();
 
   const [query, setQuery] = useState("");
-  const [activeTab, setActiveTab] = useState("All");
+  const [activeTab, setActiveTab] = useState("Songs");
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [results, setResults] = useState<any[]>([]);
@@ -75,16 +75,24 @@ export const SearchScreen = () => {
         setHasMore(false); // Global search usually doesn't paginate well in this UI structure
       } else if (tab === "Songs") {
         const songs = await fetchSongs(text, currentPage, PAGE_LIMIT);
-        newResults = songs.map((s: any) => ({ ...s, type: "song" }));
+        newResults = songs
+          .filter((s: any) => (s.title || s.name || "").toLowerCase().includes(text.toLowerCase()))
+          .map((s: any) => ({ ...s, type: "song" }));
       } else if (tab === "Albums") {
         const albums = await fetchAlbums(text, currentPage, PAGE_LIMIT);
-        newResults = albums.map((a: any) => ({ ...a, type: "album" }));
+        newResults = albums
+          .filter((a: any) => (a.title || a.name || "").toLowerCase().includes(text.toLowerCase()))
+          .map((a: any) => ({ ...a, type: "album" }));
       } else if (tab === "Artists") {
         const artists = await fetchArtists(text, currentPage, PAGE_LIMIT);
-        newResults = artists.map((a: any) => ({ ...a, type: "artist" }));
-      } else if (tab === "Playlists") {
+        newResults = artists
+          .filter((a: any) => (a.title || a.name || "").toLowerCase().includes(text.toLowerCase()))
+          .map((a: any) => ({ ...a, type: "artist" }));
+      } else if (tab === "Folders" || tab === "Playlists") {
         const playlists = await fetchPlaylists(text, currentPage, PAGE_LIMIT);
-        newResults = playlists.map((p: any) => ({ ...p, type: "playlist" }));
+        newResults = playlists
+          .filter((p: any) => (p.title || p.name || "").toLowerCase().includes(text.toLowerCase()))
+          .map((p: any) => ({ ...p, type: "playlist" }));
       }
 
       if (isLoadMore) {
@@ -164,15 +172,17 @@ export const SearchScreen = () => {
       key={tab}
       style={[
         styles.tab,
-        { backgroundColor: isDark ? colors.lightGray : "#F5F5F5" },
-        activeTab === tab && { backgroundColor: colors.primary }
+        activeTab === tab
+          ? { backgroundColor: colors.primary, borderColor: colors.primary }
+          : { backgroundColor: 'transparent', borderColor: colors.primary }
       ]}
       onPress={() => onTabPress(tab)}
     >
       <Text style={[
         styles.tabText,
-        { color: colors.gray },
-        activeTab === tab && { color: "#FFFFFF" }
+        activeTab === tab
+          ? { color: "#FFFFFF" }
+          : { color: colors.primary }
       ]}>
         {tab}
       </Text>
@@ -217,6 +227,20 @@ export const SearchScreen = () => {
     );
   };
 
+  const renderEmptyState = () => (
+    <View style={styles.notFoundContainer}>
+      <Image
+        source={require('../../assets/search-not-found-new.png')}
+        style={styles.notFoundImage}
+        resizeMode="contain"
+      />
+      <Text style={[styles.notFoundTitle, { color: colors.text }]}>Not Found</Text>
+      <Text style={[styles.notFoundText, { color: colors.gray }]}>
+        Sorry, the keyword you entered cannot be found, please check again or search with another keyword.
+      </Text>
+    </View>
+  );
+
   const renderGlobalSection = (title: string, data: any[], type: string) => {
     if (!data || data.length === 0) return null;
     return (
@@ -257,14 +281,21 @@ export const SearchScreen = () => {
     );
   };
 
+  const isGlobalEmpty = globalResults && (
+    (globalResults.songs?.results?.length || 0) +
+    (globalResults.albums?.results?.length || 0) +
+    (globalResults.artists?.results?.length || 0) +
+    (globalResults.playlists?.results?.length || 0) === 0
+  );
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
-        <View style={[styles.searchBarContainer, { backgroundColor: colors.white, borderColor: colors.border }]}>
-          <Ionicons name="search" size={20} color={colors.primary} />
+        <View style={[styles.searchBarContainer, { backgroundColor: isDark ? "#1C1C1E" : "#F4F4F5" }]}>
+          <Ionicons name="search" size={20} color={colors.gray} />
           <TextInput
             ref={inputRef}
             style={[styles.searchInput, { color: colors.text }]}
@@ -275,13 +306,13 @@ export const SearchScreen = () => {
           />
           {query.length > 0 && (
             <TouchableOpacity onPress={() => handleSearchChange("")}>
-              <Ionicons name="close-circle" size={20} color={colors.gray} />
+              <Ionicons name="close-outline" size={24} color={colors.primary} />
             </TouchableOpacity>
           )}
         </View>
       </View>
 
-      <View style={[styles.tabsContainer, { borderBottomColor: colors.border }]}>
+      <View style={styles.tabsContainer}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabsScrollContent}>
           {SEARCH_TABS.map(renderTab)}
         </ScrollView>
@@ -300,15 +331,23 @@ export const SearchScreen = () => {
         <ScrollView
           style={styles.content}
           showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ flexGrow: 1 }}
         >
-          {renderGlobalSection("Songs", globalResults.songs?.results || [], "song")}
-          {renderGlobalSection("Albums", globalResults.albums?.results || [], "album")}
-          {renderGlobalSection("Artists", globalResults.artists?.results || [], "artist")}
-          {renderGlobalSection("Playlists", globalResults.playlists?.results || [], "playlist")}
+          {isGlobalEmpty ? (
+            renderEmptyState()
+          ) : (
+            <>
+              {renderGlobalSection("Songs", globalResults.songs?.results || [], "song")}
+              {renderGlobalSection("Albums", globalResults.albums?.results || [], "album")}
+              {renderGlobalSection("Artists", globalResults.artists?.results || [], "artist")}
+              {renderGlobalSection("Playlists", globalResults.playlists?.results || [], "playlist")}
+            </>
+          )}
           <View style={{ height: 40 }} />
         </ScrollView>
       ) : (
         <FlatList
+          style={{ flex: 1 }}
           data={results}
           renderItem={renderResultItem}
           keyExtractor={(item, index) => `${item.id}-${index}`}
@@ -316,11 +355,7 @@ export const SearchScreen = () => {
           onEndReached={loadMore}
           onEndReachedThreshold={0.5}
           ListFooterComponent={renderFooter}
-          ListEmptyComponent={
-            <View style={styles.centerContainer}>
-              <Text style={[styles.emptyText, { color: colors.gray }]}>No results found for "{query}"</Text>
-            </View>
-          }
+          ListEmptyComponent={renderEmptyState()}
         />
       )}
     </SafeAreaView>
@@ -341,11 +376,10 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    borderRadius: 12,
+    borderRadius: 16,
     marginLeft: 16,
     paddingHorizontal: 12,
     height: 48,
-    borderWidth: 1,
   },
   searchInput: {
     flex: 1,
@@ -354,21 +388,21 @@ const styles = StyleSheet.create({
   },
   tabsContainer: {
     paddingVertical: 10,
-    borderBottomWidth: 1,
   },
   tabsScrollContent: {
     paddingHorizontal: 20,
   },
   tab: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     paddingVertical: 8,
-    borderRadius: 20,
-    marginRight: 10,
+    borderRadius: 24,
+    marginRight: 12,
+    borderWidth: 1,
   },
   activeTab: {},
   tabText: {
     fontSize: 14,
-    fontWeight: "600",
+    fontWeight: "500",
   },
   activeTabText: {},
   content: {
@@ -378,6 +412,7 @@ const styles = StyleSheet.create({
   resultsList: {
     paddingHorizontal: 20,
     paddingTop: 10,
+    flexGrow: 1,
   },
   globalSection: {
     marginTop: 20,
@@ -445,5 +480,27 @@ const styles = StyleSheet.create({
   footerLoader: {
     paddingVertical: 20,
     alignItems: 'center',
+  },
+  notFoundContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingTop: 60,
+    paddingHorizontal: 32,
+  },
+  notFoundImage: {
+    width: 320,
+    height: 320,
+    marginBottom: 24,
+  },
+  notFoundTitle: {
+    fontSize: 22,
+    fontWeight: "700",
+    marginBottom: 12,
+  },
+  notFoundText: {
+    fontSize: 15,
+    textAlign: "center",
+    lineHeight: 22,
   },
 });

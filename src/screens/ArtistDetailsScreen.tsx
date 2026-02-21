@@ -15,6 +15,7 @@ import { useTheme } from "../hooks/useTheme";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { usePlayerStore, Track } from "../store/usePlayerStore";
 import { fetchArtistDetails, fetchArtistSongs, fetchArtistAlbums } from "../services/api";
+import { MiniPlayer } from "../components/MiniPlayer";
 
 export const ArtistDetailsScreen = () => {
   const navigation = useNavigation<any>();
@@ -169,6 +170,7 @@ export const ArtistDetailsScreen = () => {
 
         <View style={{ height: 40 }} />
       </ScrollView>
+      <MiniPlayer />
     </SafeAreaView>
   );
 };

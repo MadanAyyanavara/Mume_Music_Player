@@ -40,6 +40,13 @@ const PlayerScreen = ({ navigation }: { navigation: any }) => {
     isFavorite,
     isLoading,
     playbackSessionId,
+    shuffleMode,
+    repeatMode,
+    toggleShuffle,
+    toggleRepeat,
+    isDownloaded,
+    downloadTrack,
+    removeDownload,
   } = usePlayerStore();
   const { colors, isDark } = useTheme();
 
@@ -47,22 +54,19 @@ const PlayerScreen = ({ navigation }: { navigation: any }) => {
   const [lyrics, setLyrics] = useState<string | null>(null);
   const [isSliding, setIsSliding] = useState(false);
   const [sliderValue, setSliderValue] = useState(0);
-  const [lastSessionId, setLastSessionId] = useState(playbackSessionId);
+  // MANDATORY RESET PROTOCOL: 
+  // When session ID changes (new song or rapid-fire restart), we force UI state strictly to 0.
+  useEffect(() => {
+    setSliderValue(0);
+    setIsSliding(false); // Guard against stuck dragging state
+  }, [playbackSessionId]);
 
   // Sync slider with position from store
   useEffect(() => {
     if (!isSliding) {
-      setSliderValue(position);
+      setSliderValue(isLoading ? 0 : position);
     }
-  }, [position, isSliding]);
-
-  // MANDATORY RESET PROTOCOL: 
-  // If the session ID changes, we MUST reset local slider state synchronously 
-  // during the render cycle to ensure the timeline starts from 0 exactly.
-  if (playbackSessionId !== lastSessionId) {
-    setSliderValue(0);
-    setLastSessionId(playbackSessionId);
-  }
+  }, [position, isSliding, isLoading]);
 
   useEffect(() => {
     if (!currentTrack) {
@@ -86,6 +90,16 @@ const PlayerScreen = ({ navigation }: { navigation: any }) => {
 
   if (!currentTrack) return null;
 
+  const downloaded = isDownloaded(currentTrack.id);
+
+  const handleDownloadToggle = () => {
+    if (downloaded) {
+      removeDownload(currentTrack.id);
+    } else {
+      downloadTrack(currentTrack);
+    }
+  };
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
@@ -96,13 +110,22 @@ const PlayerScreen = ({ navigation }: { navigation: any }) => {
         <Text style={[styles.headerContext, { color: colors.text }]} numberOfLines={1}>
           NOW PLAYING
         </Text>
-        <TouchableOpacity onPress={() => toggleFavorite(currentTrack)}>
-          <Ionicons
-            name={isFavorite(currentTrack.id) ? "heart" : "heart-outline"}
-            size={28}
-            color={isFavorite(currentTrack.id) ? colors.primary : colors.text}
-          />
-        </TouchableOpacity>
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
+          <TouchableOpacity onPress={handleDownloadToggle} style={{ marginRight: 20 }}>
+            <Ionicons
+              name={downloaded ? "checkmark-circle" : "download-outline"}
+              size={28}
+              color={downloaded ? colors.primary : colors.text}
+            />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => toggleFavorite(currentTrack)}>
+            <Ionicons
+              name={isFavorite(currentTrack.id) ? "heart" : "heart-outline"}
+              size={28}
+              color={isFavorite(currentTrack.id) ? colors.primary : colors.text}
+            />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
@@ -128,7 +151,7 @@ const PlayerScreen = ({ navigation }: { navigation: any }) => {
             style={styles.progressBar}
             minimumValue={0}
             maximumValue={duration || 1}
-            value={sliderValue}
+            value={isLoading ? 0 : sliderValue}
             minimumTrackTintColor={colors.primary}
             maximumTrackTintColor={isDark ? "#333333" : "#F0F0F0"}
             thumbTintColor={colors.primary}
@@ -142,15 +165,15 @@ const PlayerScreen = ({ navigation }: { navigation: any }) => {
             }}
           />
           <View style={styles.timeContainer}>
-            <Text style={[styles.timeText, { color: colors.gray }]}>{formatTime(sliderValue)}</Text>
+            <Text style={[styles.timeText, { color: colors.gray }]}>{formatTime(isLoading ? 0 : sliderValue)}</Text>
             <Text style={[styles.timeText, { color: colors.gray }]}>{formatTime(duration)}</Text>
           </View>
         </View>
 
         {/* Controls */}
         <View style={styles.controlsRow}>
-          <TouchableOpacity onPress={() => { }}>
-            <Ionicons name="shuffle" size={24} color={colors.gray} />
+          <TouchableOpacity onPress={toggleShuffle}>
+            <Ionicons name="shuffle" size={24} color={shuffleMode ? colors.primary : colors.gray} />
           </TouchableOpacity>
 
           <TouchableOpacity onPress={previous}>
@@ -174,12 +197,24 @@ const PlayerScreen = ({ navigation }: { navigation: any }) => {
             )}
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={next}>
+          <TouchableOpacity onPress={() => next()}>
             <Ionicons name="play-skip-forward" size={36} color={colors.text} />
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={() => { }}>
-            <Ionicons name="repeat" size={24} color={colors.gray} />
+          <TouchableOpacity
+            onPress={toggleRepeat}
+            style={{ width: 24, height: 24, justifyContent: 'center', alignItems: 'center' }}
+          >
+            <Ionicons
+              name="repeat"
+              size={24}
+              color={repeatMode !== 'none' ? colors.primary : colors.gray}
+            />
+            {repeatMode === 'one' && (
+              <View style={{ position: 'absolute', backgroundColor: colors.background, borderRadius: 6, width: 12, height: 12, justifyContent: 'center', alignItems: 'center', right: -4, bottom: -4 }}>
+                <Text style={{ color: colors.primary, fontSize: 8, fontWeight: 'bold' }}>1</Text>
+              </View>
+            )}
           </TouchableOpacity>
         </View>
       </ScrollView>

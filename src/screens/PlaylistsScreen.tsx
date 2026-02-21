@@ -11,13 +11,20 @@ export const PlaylistsScreen = () => {
   const navigation = useNavigation<any>();
   const [loading, setLoading] = useState(true);
   const [playlists, setPlaylists] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState("Playlists");
   const { colors, isDark } = useTheme();
+
+  const TABS = ["Playlists", "Charts", "New"];
 
   useEffect(() => {
     const loadPlaylists = async () => {
       setLoading(true);
       try {
-        const data = await fetchPlaylists("Top Global");
+        let query = "Top Global";
+        if (activeTab === "Charts") query = "Top Charts";
+        if (activeTab === "New") query = "New Releases";
+
+        const data = await fetchPlaylists(query);
         setPlaylists(data);
       } catch (error) {
         console.error("Error loading playlists:", error);
@@ -26,7 +33,7 @@ export const PlaylistsScreen = () => {
       }
     };
     loadPlaylists();
-  }, []);
+  }, [activeTab]);
 
   const renderPlaylistItem = ({ item }: { item: any }) => (
     <TouchableOpacity
@@ -54,16 +61,24 @@ export const PlaylistsScreen = () => {
       </View>
 
       <View style={styles.tabBar}>
-        <TouchableOpacity style={styles.activeTab}>
-          <Text style={[styles.activeTabText, { color: colors.primary }]}>Playlists</Text>
-          <View style={[styles.tabIndicator, { backgroundColor: colors.primary }]} />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.tab}>
-          <Text style={[styles.tabText, { color: colors.gray }]}>Charts</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.tab}>
-          <Text style={[styles.tabText, { color: colors.gray }]}>New</Text>
-        </TouchableOpacity>
+        {TABS.map((tab) => {
+          const isActive = activeTab === tab;
+          return (
+            <TouchableOpacity
+              key={tab}
+              style={isActive ? styles.activeTab : styles.tab}
+              onPress={() => setActiveTab(tab)}
+            >
+              <Text style={[
+                isActive ? styles.activeTabText : styles.tabText,
+                { color: isActive ? colors.primary : colors.gray }
+              ]}>
+                {tab}
+              </Text>
+              {isActive && <View style={[styles.tabIndicator, { backgroundColor: colors.primary }]} />}
+            </TouchableOpacity>
+          );
+        })}
       </View>
 
       {loading ? (

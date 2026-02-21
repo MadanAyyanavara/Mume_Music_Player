@@ -18,18 +18,9 @@ interface OptionsModalProps {
   selectedSong: any;
 }
 
-const ACTIONS = [
-  { icon: "arrow-forward-circle-outline", label: "Play Next" },
-  { icon: "document-text-outline", label: "Add to Playing Queue" },
-  { icon: "add-circle-outline", label: "Add to Playlist" },
-  { icon: "play-circle-outline", label: "Go to Album" },
-  { icon: "person-outline", label: "Go to Artist" },
-  { icon: "information-circle-outline", label: "Details" },
-  { icon: "call-outline", label: "Set as Ringtone" },
-  { icon: "close-circle-outline", label: "Add to Blacklist" },
-  { icon: "paper-plane-outline", label: "Share" },
-  { icon: "trash-outline", label: "Delete from Device" },
-];
+// Actions moved inside component
+
+import { usePlayerStore } from "../../store/usePlayerStore";
 
 export const OptionsModal = ({
   visible,
@@ -37,7 +28,32 @@ export const OptionsModal = ({
   selectedSong,
 }: OptionsModalProps) => {
   const { colors, isDark } = useTheme();
+  const { isDownloaded, downloadTrack, removeDownload } = usePlayerStore();
+
   if (!selectedSong) return null;
+
+  const downloaded = isDownloaded(selectedSong.id);
+
+  const ACTIONS = [
+    { icon: downloaded ? "checkmark-circle" : "download-outline", label: downloaded ? "Remove Download" : "Download Offline" },
+    { icon: "arrow-forward-circle-outline", label: "Play Next" },
+    { icon: "document-text-outline", label: "Add to Playing Queue" },
+    { icon: "add-circle-outline", label: "Add to Playlist" },
+    { icon: "person-outline", label: "Go to Artist" },
+    { icon: "paper-plane-outline", label: "Share" },
+  ];
+
+  const handleAction = (label: string) => {
+    if (label === "Download Offline") {
+      downloadTrack(selectedSong);
+      onClose();
+    } else if (label === "Remove Download") {
+      removeDownload(selectedSong.id);
+      onClose();
+    } else {
+      console.log(label);
+    }
+  };
 
   return (
     <Modal
@@ -84,15 +100,17 @@ export const OptionsModal = ({
                   <TouchableOpacity
                     key={index}
                     style={styles.actionItem}
-                    onPress={() => console.log(action.label)}
+                    onPress={() => handleAction(action.label)}
                   >
                     <Ionicons
                       name={action.icon as any}
                       size={24}
-                      color={colors.text}
+                      color={action.label === "Remove Download" ? colors.primary : colors.text}
                       style={styles.actionIcon}
                     />
-                    <Text style={[styles.actionText, { color: colors.text }]}>{action.label}</Text>
+                    <Text style={[styles.actionText, { color: action.label === "Remove Download" ? colors.primary : colors.text }]}>
+                      {action.label}
+                    </Text>
                   </TouchableOpacity>
                 ))}
                 <View style={{ height: 20 }} />
