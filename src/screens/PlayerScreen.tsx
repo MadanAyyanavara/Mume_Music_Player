@@ -13,9 +13,9 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import Slider from "@react-native-community/slider";
-import { useTheme } from "../hooks/useTheme";
-import { usePlayerStore } from "../store/usePlayerStore";
-import { fetchSongDetails } from "../services/api";
+import { useTheme } from "@/hooks";
+import { usePlayerStore } from "@/store";
+import { fetchSongDetails } from "@/api";
 
 const { width } = Dimensions.get("window");
 
@@ -25,7 +25,7 @@ const formatTime = (seconds: number) => {
   return `${mins < 10 ? "0" : ""}${mins}:${secs < 10 ? "0" : ""}${secs}`;
 };
 
-const PlayerScreen = ({ navigation }: { navigation: any }) => {
+export const PlayerScreen = ({ navigation }: { navigation: any }) => {
   const {
     currentTrack,
     isPlaying,
@@ -389,4 +389,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default PlayerScreen;
+

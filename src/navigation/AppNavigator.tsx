@@ -2,12 +2,13 @@ import React from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { TabNavigator } from "./TabNavigator";
-import PlayerScreen from "../screens/PlayerScreen";
-
-import { ArtistDetailsScreen } from "../screens/ArtistDetailsScreen";
-import { AlbumDetailsScreen } from "../screens/AlbumDetailsScreen";
-import { SearchScreen } from "../screens/SearchScreen";
-import { FolderDetailsScreen } from "../screens/FolderDetailsScreen";
+import {
+  PlayerScreen,
+  ArtistDetailsScreen,
+  AlbumDetailsScreen,
+  SearchScreen,
+  FolderDetailsScreen
+} from "@/screens";
 
 const Stack = createNativeStackNavigator();
 

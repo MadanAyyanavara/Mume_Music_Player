@@ -1,5 +1,5 @@
-import { usePlayerStore } from "../store/usePlayerStore";
-import { LIGHT_COLORS, DARK_COLORS } from "../styles/theme";
+import { usePlayerStore } from "@/store";
+import { LIGHT_COLORS, DARK_COLORS } from "@/theme";
 
 export const useTheme = () => {
     const theme = usePlayerStore((state) => state.theme);

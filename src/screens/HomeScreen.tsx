@@ -11,21 +11,16 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { useTheme } from "../hooks/useTheme";
-import { SectionHeader } from "../components/SectionHeader";
-import {
-  FOLDERS,
-} from "../constants/mockData";
+import { useTheme } from "@/hooks";
+import { SectionHeader } from "@/components";
+import { FOLDERS } from "@/constants/mockData";
 import { useNavigation } from "@react-navigation/native";
-import { usePlayerStore, Track } from "../store/usePlayerStore";
-import { fetchSongs, fetchTrendingSongs, fetchArtists, fetchAlbums } from "../services/api";
+import { usePlayerStore } from "@/store";
+import { Track, Artist, Album } from "@/types";
+import { fetchSongs, fetchTrendingSongs, fetchArtists, fetchAlbums } from "@/api";
 
 // Components
-import { MiniPlayer } from "../components/MiniPlayer";
-import { SongListItem } from "../components/SongListItem";
-import { SortModal } from "../components/modals/SortModal";
-import { OptionsModal } from "../components/modals/OptionsModal";
-import { ArtistOptionsModal } from "../components/modals/ArtistOptionsModal";
+import { MiniPlayer, SongListItem, SortModal, OptionsModal, ArtistOptionsModal } from "@/components";
 
 const TABS = ["Suggested", "Songs", "Artists", "Albums", "Folders"];
 
@@ -40,14 +35,14 @@ export const HomeScreen = () => {
   const [optionsModalVisible, setOptionsModalVisible] = useState(false);
   const [artistOptionsModalVisible, setArtistOptionsModalVisible] =
     useState(false);
-  const [selectedSong, setSelectedSong] = useState<any>(null);
-  const [selectedArtist, setSelectedArtist] = useState<any>(null);
+  const [selectedSong, setSelectedSong] = useState<Track | null>(null);
+  const [selectedArtist, setSelectedArtist] = useState<Artist | null>(null);
 
   // API Data
   const [trendingSongs, setTrendingSongs] = useState<Track[]>([]);
   const [newReleases, setNewReleases] = useState<Track[]>([]);
-  const [homeArtists, setHomeArtists] = useState<any[]>([]);
-  const [homeAlbums, setHomeAlbums] = useState<any[]>([]);
+  const [homeArtists, setHomeArtists] = useState<Artist[]>([]);
+  const [homeAlbums, setHomeAlbums] = useState<Album[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Sort State
@@ -105,12 +100,12 @@ export const HomeScreen = () => {
     setSortModalVisible(false);
   };
 
-  const handleOpenOptions = (song: any) => {
+  const handleOpenOptions = (song: Track) => {
     setSelectedSong(song);
     setOptionsModalVisible(true);
   };
 
-  const handleOpenArtistOptions = (artist: any) => {
+  const handleOpenArtistOptions = (artist: Artist) => {
     setSelectedArtist(artist);
     setArtistOptionsModalVisible(true);
   };
@@ -240,7 +235,7 @@ export const HomeScreen = () => {
           horizontal
           showsHorizontalScrollIndicator={false}
           renderItem={renderTab}
-          keyExtractor={(item) => item}
+          keyExtractor={(item: string) => item}
           contentContainerStyle={styles.tabsContent}
         />
       </View>
@@ -263,10 +258,10 @@ export const HomeScreen = () => {
                   data={trendingSongs}
                   horizontal
                   showsHorizontalScrollIndicator={false}
-                  renderItem={({ item, index }) =>
+                  renderItem={({ item, index }: { item: Track, index: number }) =>
                     renderCardItem(item, index, trendingSongs)
                   }
-                  keyExtractor={(item) => item.id}
+                  keyExtractor={(item: any) => item.id}
                   contentContainerStyle={styles.listContent}
                 />
 
@@ -276,7 +271,7 @@ export const HomeScreen = () => {
                   horizontal
                   showsHorizontalScrollIndicator={false}
                   renderItem={renderArtistCircleItem}
-                  keyExtractor={(item) => item.id}
+                  keyExtractor={(item: any) => item.id}
                   contentContainerStyle={styles.listContent}
                 />
 
@@ -285,10 +280,10 @@ export const HomeScreen = () => {
                   data={newReleases}
                   horizontal
                   showsHorizontalScrollIndicator={false}
-                  renderItem={({ item, index }) =>
+                  renderItem={({ item, index }: { item: Track, index: number }) =>
                     renderCardItem(item, index, newReleases)
                   }
-                  keyExtractor={(item) => item.id}
+                  keyExtractor={(item: any) => item.id}
                   contentContainerStyle={styles.listContent}
                 />
               </>
@@ -309,13 +304,13 @@ export const HomeScreen = () => {
                   </TouchableOpacity>
                 </View>
                 <View style={styles.songsListContainer}>
-                  {sortedSongs.map((item, index) => (
+                  {sortedSongs.map((item: Track, index: number) => (
                     <View key={item.id}>
                       <SongListItem
                         item={item}
                         index={index}
                         playlist={sortedSongs}
-                        onOpenOptions={handleOpenOptions}
+                        onOpenOptions={(song: Track) => handleOpenOptions(song)}
                       />
                     </View>
                   ))}
@@ -327,7 +322,7 @@ export const HomeScreen = () => {
                   <Text style={[styles.songsCount, { color: colors.text }]}>{homeArtists.length} artists</Text>
                 </View>
                 <View style={styles.songsListContainer}>
-                  {homeArtists.map((item) => (
+                  {homeArtists.map((item: Artist) => (
                     <View key={item.id}>{renderArtistListItem({ item })}</View>
                   ))}
                 </View>
@@ -343,7 +338,7 @@ export const HomeScreen = () => {
                     data={homeAlbums}
                     numColumns={2}
                     renderItem={renderAlbumGridItem}
-                    keyExtractor={(item) => item.id}
+                    keyExtractor={(item: any) => item.id}
                     columnWrapperStyle={{ justifyContent: "space-between" }}
                     scrollEnabled={false}
                   />
@@ -355,7 +350,7 @@ export const HomeScreen = () => {
                   <Text style={[styles.songsCount, { color: colors.text }]}>{FOLDERS.length} folders</Text>
                 </View>
                 <View style={styles.songsListContainer}>
-                  {FOLDERS.map((item) => (
+                  {FOLDERS.map((item: any) => (
                     <View key={item.id}>{renderFolderListItem({ item })}</View>
                   ))}
                 </View>
@@ -623,4 +618,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default HomeScreen;
+

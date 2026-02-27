@@ -1,13 +1,9 @@
 import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { HomeScreen } from "../screens/HomeScreen";
-import { FavoritesScreen } from "../screens/FavoritesScreen";
-import { PlaylistsScreen } from "../screens/PlaylistsScreen";
-import { SettingsScreen } from "../screens/SettingsScreen";
+import { HomeScreen, FavoritesScreen, PlaylistsScreen, SettingsScreen } from "@/screens";
 import { Ionicons } from "@expo/vector-icons";
-import { useTheme } from "../hooks/useTheme";
-import { usePlayerStore } from "../store/usePlayerStore";
-
+import { useTheme } from "@/hooks";
+import { usePlayerStore } from "@/store";
 const Tab = createBottomTabNavigator();
 
 export const TabNavigator = () => {
@@ -34,7 +30,7 @@ export const TabNavigator = () => {
           fontSize: 10,
           marginTop: -4,
         },
-        tabBarIcon: ({ focused, color, size }) => {
+        tabBarIcon: ({ focused, color }: { focused: boolean, color: string }) => {
           let iconName: any;
 
           if (route.name === "Home") {

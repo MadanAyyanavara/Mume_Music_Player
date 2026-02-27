@@ -14,8 +14,8 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { useTheme } from "../hooks/useTheme";
-import { usePlayerStore } from "../store/usePlayerStore";
+import { useTheme } from "@/hooks";
+import { usePlayerStore } from "@/store";
 
 interface SettingItemProps {
   icon: keyof typeof Ionicons.glyphMap;

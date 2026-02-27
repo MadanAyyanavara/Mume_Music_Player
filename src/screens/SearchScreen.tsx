@@ -13,9 +13,10 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { useTheme } from "../hooks/useTheme";
+import { useTheme } from "@/hooks";
 import { useNavigation } from "@react-navigation/native";
-import { usePlayerStore, Track } from "../store/usePlayerStore";
+import { usePlayerStore } from "@/store";
+import { Track } from "@/types";
 import {
   fetchSongs,
   fetchAlbums,
@@ -23,7 +24,7 @@ import {
   fetchPlaylists,
   fetchGlobalSearch,
   fetchSongDetails
-} from "../services/api";
+} from "@/api";
 
 const SEARCH_TABS = ["Songs", "Artists", "Albums", "Folders"];
 const PAGE_LIMIT = 20;
@@ -44,7 +45,7 @@ export const SearchScreen = () => {
   const [hasMore, setHasMore] = useState(true);
 
   const inputRef = useRef<TextInput>(null);
-  const searchTimeout = useRef<NodeJS.Timeout | null>(null);
+  const searchTimeout = useRef<any>(null);
 
   useEffect(() => {
     setTimeout(() => inputRef.current?.focus(), 100);
@@ -75,28 +76,20 @@ export const SearchScreen = () => {
         setHasMore(false); // Global search usually doesn't paginate well in this UI structure
       } else if (tab === "Songs") {
         const songs = await fetchSongs(text, currentPage, PAGE_LIMIT);
-        newResults = songs
-          .filter((s: any) => (s.title || s.name || "").toLowerCase().includes(text.toLowerCase()))
-          .map((s: any) => ({ ...s, type: "song" }));
+        newResults = songs.map((s: any) => ({ ...s, type: "song" }));
       } else if (tab === "Albums") {
         const albums = await fetchAlbums(text, currentPage, PAGE_LIMIT);
-        newResults = albums
-          .filter((a: any) => (a.title || a.name || "").toLowerCase().includes(text.toLowerCase()))
-          .map((a: any) => ({ ...a, type: "album" }));
+        newResults = albums.map((a: any) => ({ ...a, type: "album" }));
       } else if (tab === "Artists") {
         const artists = await fetchArtists(text, currentPage, PAGE_LIMIT);
-        newResults = artists
-          .filter((a: any) => (a.title || a.name || "").toLowerCase().includes(text.toLowerCase()))
-          .map((a: any) => ({ ...a, type: "artist" }));
+        newResults = artists.map((a: any) => ({ ...a, type: "artist" }));
       } else if (tab === "Folders" || tab === "Playlists") {
         const playlists = await fetchPlaylists(text, currentPage, PAGE_LIMIT);
-        newResults = playlists
-          .filter((p: any) => (p.title || p.name || "").toLowerCase().includes(text.toLowerCase()))
-          .map((p: any) => ({ ...p, type: "playlist" }));
+        newResults = playlists.map((p: any) => ({ ...p, type: "playlist" }));
       }
 
       if (isLoadMore) {
-        setResults(prev => [...prev, ...newResults]);
+        setResults((prev: any[]) => [...prev, ...newResults]);
         setPage(currentPage);
       } else {
         setResults(newResults);
@@ -251,7 +244,7 @@ export const SearchScreen = () => {
             <Text style={[styles.seeAllText, { color: colors.primary }]}>See All</Text>
           </TouchableOpacity>
         </View>
-        {data.slice(0, 3).map((item) => (
+        {data.slice(0, 3).map((item: any) => (
           <TouchableOpacity
             key={item.id}
             style={styles.resultItem}
@@ -350,7 +343,7 @@ export const SearchScreen = () => {
           style={{ flex: 1 }}
           data={results}
           renderItem={renderResultItem}
-          keyExtractor={(item, index) => `${item.id}-${index}`}
+          keyExtractor={(item: any, index: number) => `${item.id}-${index}`}
           contentContainerStyle={styles.resultsList}
           onEndReached={loadMore}
           onEndReachedThreshold={0.5}

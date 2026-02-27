@@ -2,12 +2,11 @@ import React, { useState } from "react";
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { useTheme } from "../hooks/useTheme";
-import { usePlayerStore } from "../store/usePlayerStore";
+import { useTheme } from "@/hooks";
+import { usePlayerStore } from "@/store";
+import { Track } from "@/types";
 import { useNavigation } from "@react-navigation/native";
-import { SongListItem } from "../components/SongListItem";
-import { MiniPlayer } from "../components/MiniPlayer";
-import { OptionsModal } from "../components/modals/OptionsModal";
+import { SongListItem, MiniPlayer, OptionsModal } from "@/components";
 
 export const FavoritesScreen = () => {
   const navigation = useNavigation<any>();
@@ -17,8 +16,8 @@ export const FavoritesScreen = () => {
   const [optionsModalVisible, setOptionsModalVisible] = useState(false);
   const [activeTab, setActiveTab] = useState<"Favorites" | "Downloads">("Favorites");
 
-  const handleOpenOptions = (song: any) => {
-    setSelectedSong(song);
+  const handleOpenOptions = (song: Track) => {
+    setSelectedSong(song as any);
     setOptionsModalVisible(true);
   };
 
@@ -72,15 +71,15 @@ export const FavoritesScreen = () => {
 
           <FlatList
             data={displayList}
-            renderItem={({ item, index }) => (
+            renderItem={({ item, index }: { item: Track, index: number }) => (
               <SongListItem
                 item={item}
                 index={index}
                 playlist={displayList}
-                onOpenOptions={handleOpenOptions}
+                onOpenOptions={(song: Track) => handleOpenOptions(song)}
               />
             )}
-            keyExtractor={(item) => item.id}
+            keyExtractor={(item: Track) => item.id}
             contentContainerStyle={styles.listPadding}
             showsVerticalScrollIndicator={false}
           />

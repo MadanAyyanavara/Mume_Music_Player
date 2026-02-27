@@ -1,21 +1,4 @@
-import { ImageSourcePropType } from "react-native";
-
-export type User = {
-  id: string;
-  name: string;
-  image: ImageSourcePropType;
-};
-
-export type Song = {
-  id: string;
-  title: string;
-  artist: string;
-  image: ImageSourcePropType;
-};
-
-export type Album = {
-  id: string;
-  title: string;
-  artist: string;
-  image: ImageSourcePropType;
-};
+export * from './models/track';
+export * from './models/album';
+export * from './models/artist';
+export * from './models/playlist';

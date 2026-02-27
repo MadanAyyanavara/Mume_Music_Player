@@ -2,10 +2,10 @@ import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { useTheme } from "../hooks/useTheme";
+import { useTheme } from "@/hooks";
 import { useNavigation } from "@react-navigation/native";
-import { fetchPlaylists } from "../services/api";
-import { MiniPlayer } from "../components/MiniPlayer";
+import { fetchPlaylists } from "@/api";
+import { MiniPlayer } from "@/components";
 
 export const PlaylistsScreen = () => {
   const navigation = useNavigation<any>();
@@ -61,7 +61,7 @@ export const PlaylistsScreen = () => {
       </View>
 
       <View style={styles.tabBar}>
-        {TABS.map((tab) => {
+        {TABS.map((tab: string) => {
           const isActive = activeTab === tab;
           return (
             <TouchableOpacity
@@ -90,7 +90,7 @@ export const PlaylistsScreen = () => {
         <FlatList
           data={playlists}
           renderItem={renderPlaylistItem}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item: any) => item.id}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={

@@ -10,10 +10,11 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { useTheme } from "../hooks/useTheme";
+import { useTheme } from "@/hooks";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import { usePlayerStore, Track } from "../store/usePlayerStore";
-import { fetchAlbumDetails, fetchPlaylistDetails } from "../services/api";
+import { usePlayerStore } from "@/store";
+import { Track } from "@/types";
+import { fetchAlbumDetails, fetchPlaylistDetails } from "@/api";
 
 const formatDuration = (seconds: number) => {
   const mins = Math.floor(seconds / 60);
@@ -136,7 +137,7 @@ export const AlbumDetailsScreen = () => {
 
         {/* Songs List */}
         <View style={styles.songsList}>
-          {songs.map((item, index) => (
+          {songs.map((item: Track, index: number) => (
             <TouchableOpacity
               key={item.id}
               style={styles.songRow}

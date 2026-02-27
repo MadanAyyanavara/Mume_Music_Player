@@ -2,17 +2,7 @@ import { create } from 'zustand';
 import { Audio, AVPlaybackStatus, InterruptionModeIOS, InterruptionModeAndroid } from 'expo-av';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system/legacy';
-
-export type Track = {
-  id: string;
-  title: string;
-  artist: string;
-  imageUrl: string;
-  audioUrl: string;
-  localAudioUrl?: string;
-  duration: number; // in seconds
-  lyrics?: string;
-};
+import { Track } from '@/types';
 
 type PlayerState = {
   currentTrack: Track | null;
@@ -189,7 +179,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     }
   },
 
-  seekTo: async (seconds) => {
+  seekTo: async (seconds: number) => {
     if (soundInstance && !get().isLoading) {
       try {
         await soundInstance.setPositionAsync(seconds * 1000);
@@ -200,7 +190,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     }
   },
 
-  setQueue: (queue) => {
+  setQueue: (queue: Track[]) => {
     set({ queue });
   },
 
@@ -246,9 +236,9 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     await get().playTrack(queue[prevIndex], queue);
   },
 
-  toggleShuffle: () => set((state) => ({ shuffleMode: !state.shuffleMode })),
+  toggleShuffle: () => set((state: PlayerState) => ({ shuffleMode: !state.shuffleMode })),
 
-  toggleRepeat: () => set((state) => {
+  toggleRepeat: () => set((state: PlayerState) => {
     const modes: Array<'none' | 'all' | 'one'> = ['none', 'all', 'one'];
     const nextIndex = (modes.indexOf(state.repeatMode) + 1) % modes.length;
     return { repeatMode: modes[nextIndex] };
@@ -323,7 +313,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     }
   },
 
-  addToQueue: (track) => {
+  addToQueue: (track: Track) => {
     const { queue } = get();
     if (!queue.find(t => t.id === track.id)) {
       const newQueue = [...queue, track];
@@ -332,14 +322,14 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     }
   },
 
-  removeFromQueue: (id) => {
+  removeFromQueue: (id: string) => {
     const { queue, currentIndex } = get();
     const newQueue = queue.filter(t => t.id !== id);
     set({ queue: newQueue });
     get().persistState();
   },
 
-  updateQueue: (newQueue) => {
+  updateQueue: (newQueue: Track[]) => {
     set({ queue: newQueue });
     get().persistState();
   },

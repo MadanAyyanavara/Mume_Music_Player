@@ -11,11 +11,12 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { useTheme } from "../hooks/useTheme";
+import { useTheme } from "@/hooks";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import { usePlayerStore, Track } from "../store/usePlayerStore";
-import { fetchArtistDetails, fetchArtistSongs, fetchArtistAlbums } from "../services/api";
-import { MiniPlayer } from "../components/MiniPlayer";
+import { usePlayerStore } from "@/store";
+import { Track } from "@/types";
+import { fetchArtistDetails, fetchArtistSongs, fetchArtistAlbums } from "@/api";
+import { MiniPlayer } from "@/components";
 
 export const ArtistDetailsScreen = () => {
   const navigation = useNavigation<any>();
@@ -122,7 +123,7 @@ export const ArtistDetailsScreen = () => {
               <Text style={[styles.sectionTitle, { color: colors.text }]}>Top Tracks</Text>
             </View>
             <View style={styles.songsList}>
-              {songs.slice(0, 10).map((item, index) => (
+              {songs.slice(0, 10).map((item: Track, index: number) => (
                 <TouchableOpacity
                   key={item.id}
                   style={styles.songRow}
@@ -152,9 +153,9 @@ export const ArtistDetailsScreen = () => {
               data={albums}
               horizontal
               showsHorizontalScrollIndicator={false}
-              keyExtractor={(item) => item.id}
+              keyExtractor={(item: any) => item.id}
               contentContainerStyle={{ paddingLeft: 24, paddingRight: 24 }}
-              renderItem={({ item }) => (
+              renderItem={({ item }: { item: any }) => (
                 <TouchableOpacity
                   style={styles.albumCard}
                   onPress={() => navigation.navigate("AlbumDetails", { album: item })}

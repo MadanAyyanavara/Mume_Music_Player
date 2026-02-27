@@ -9,12 +9,20 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { useTheme } from "../hooks/useTheme";
+import { useTheme } from "@/hooks";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import { usePlayerStore, Track } from "../store/usePlayerStore";
+import { usePlayerStore } from "@/store";
+import { Track } from "@/types";
 import { ALL_SONGS } from "../constants/mockData";
 
-const mapToTrack = (song: any): Track => ({
+interface MockSong {
+  id: string;
+  title: string;
+  artist: string;
+  image: string;
+}
+
+const mapToTrack = (song: MockSong): Track => ({
   id: song.id,
   title: song.title,
   artist: song.artist,
@@ -108,7 +116,7 @@ export const FolderDetailsScreen = () => {
         </View>
 
         <View style={styles.songsList}>
-          {folderSongs.map((item, index) => (
+          {folderSongs.map((item: MockSong, index: number) => (
             <View key={item.id} style={styles.songRow}>
               <Image source={{ uri: item.image }} style={[styles.songImage, { backgroundColor: colors.lightGray }]} />
               <View style={styles.songInfo}>
